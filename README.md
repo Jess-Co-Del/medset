@@ -7,8 +7,11 @@ A dataloader to prepare and load any Medical image dataset, prepared to deal wit
 from medloader.api import DatasetEngine
 from medloader.app import config as config
 from medloader.app.logger import init_logger
+from torch.utils.data import DataLoader
+
 
 logger = init_logger()
+batch_size = 8
 
 cfg = config.Configuration().get("datasets")
 
@@ -17,8 +20,6 @@ engine = DatasetEngine(
     config=cfg,
 ).go(mode="config")
 
-batch_size = 8
-from torch.utils.data import DataLoader
 
 train_dl = DataLoader(
     dataset=engine[0],
