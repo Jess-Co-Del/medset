@@ -1,0 +1,13 @@
+jupyter
+matplotlib
+numpy
+torchsummary
+tensorboard
+pandas
+pydicom
+setuptools
+scikit-learn
+monai
+nibabel
+opencv-python
+scikit-image

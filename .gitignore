@@ -1,0 +1,9 @@
+__pycache__/
+.ipynb_checkpoints/
+*.log
+model_*
+report_*
+lightning_logs
+*.csv
+*.egg-info
+*.npy
