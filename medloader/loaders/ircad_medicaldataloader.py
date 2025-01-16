@@ -21,45 +21,84 @@ class IrcadbDataloader(MedicalDataloader):
     Medical Dataset orchestrator adapted to load the 3DIrcadB dataset
     with 20 CT scans available.
     """
+    def volume_raw_processing(self):
+        """
+        Read raw scan slices, into a volume. 3Dircadb comes in individual
+        slices, in .nii format. Output is written to /dataset/processed/scan_id.npy
+        format.
+        Alocates volume slices in dim=-1.
+        """
+        target_path = os.path.join(self.dataset_path, "processed")
+        os.makedirs(target_path, exist_ok=True)
 
-    def dataset_clipping_preparation(self):
+        for scan_id in self.folder_samples:
+            patient_folder, masks_folder = self.read_dicom_pair_paths(
+                scan_id, raw_process=True)
+
+            slice_nb = len(os.listdir(patient_folder))
+            image_placeholder = np.zeros([512, 512, slice_nb])
+            mask_placeholder = np.zeros([512, 512, slice_nb])
+            for slice_id in range(slice_nb):
+                image, mask = self.read_dicom_pair(
+                    patient_folder, masks_folder, slice_id
+                )
+                image_placeholder[:, :, slice_id] = image
+                mask_placeholder[:, :, slice_id] = mask
+
+            scan_output = os.path.join(target_path, f"{scan_id}")
+            logging.debug(f"Processing {scan_output} with shape {image_placeholder.shape}")
+            os.makedirs(scan_output, exist_ok=True)
+            np.save(
+                os.path.join(scan_output, "volume.npy"),
+                image_placeholder
+            )
+            np.save(
+                os.path.join(scan_output, "segmentation.npy"),
+                mask_placeholder
+            )
+
+    def dataset_clipping(self):
         """
         Preprocessing required for usage of the Lits Nifty files to be
         used by the MedicalDataLoader api. This function clips the images,
         to [300,300,:] resolution.
+        Expects volume slices in dim=-1.
         """
         PATCH_SIZE = self.target_shape
 
         logging.basicConfig(
             level=logging.INFO,
-            filename="/dataset/Lits/patching_log.log", filemode="w"
+            filename="/dataset/ircadb/patching_log.log", filemode="w"
         )
         target_path = os.path.join(self.dataset_path, "clipped")
         os.makedirs(target_path, exist_ok=True)
 
         for scan_id in self.folder_samples:
+            scan_folder = os.path.join(
+                self.dataset_path,
+                "processed",
+                scan_id
+            )
+
+            volume = np.load(os.path.join(scan_folder, "volume.npy"))
+            segmentation = np.load(os.path.join(scan_folder, "segmentation.npy"))
+            logging.debug(f"Processing sliced, volume {volume.shape}.")
+            volume, segmentation = clip_data(volume, segmentation, PATCH_SIZE)
+
+            # Save in slices
             scan_output = os.path.join(target_path, f"{scan_id}")
             os.makedirs(scan_output, exist_ok=True)
-            patient_folder, masks_folder = self.read_dicom_pair_paths(
-                scan_id, raw_process=True)
 
-            logging.info(f"Processing {patient_folder} with masks: {masks_folder}")
+            logging.debug(f"Processing sliced, clipped volume to {scan_output} {volume.shape}.")
 
-            for slice_id in range(len(os.listdir(patient_folder))):
-                image, mask = self.read_dicom_pair(patient_folder, masks_folder, slice_id)
-
-                logging.info(np.unique(mask, return_counts=True))
-
-                image, mask = clip_data(image, mask, PATCH_SIZE)
-                logging.info(np.unique(mask, return_counts=True))
-
+            for slice_id in range(volume.shape[-1]):
                 np.save(
                     os.path.join(scan_output, f"{self.image_name_prefix}{slice_id}.npy"),
-                    image
+                    volume[:, :, slice_id]
                 )
                 np.save(
                     os.path.join(scan_output, f"{self.mask_name_prefix}{slice_id}.npy"),
-                    mask
+                    segmentation[:, :, slice_id]
                 )
 
     def read_dicom_pair(
@@ -206,12 +245,12 @@ class IrcadbDataloader(MedicalDataloader):
                     transforms.ScaleIntensityRanged(
                         keys=["target"], a_min=0.0, a_max=2.0, b_min=0, b_max=2.0, clip=True
                     ),
-                    transforms.RandSpatialCropd(  # CHECK ME LATER RandCropByPosNegLabeld()
-                        keys=["image", "target"],
-                        # label_key="targe"
-                        roi_size=(-1, self.crop_shape, self.crop_shape),
-                        random_size=False
-                    ),
+                    # transforms.RandSpatialCropd(  # CHECK ME LATER RandCropByPosNegLabeld()
+                    #     keys=["image", "target"],
+                    #     # label_key="targe"
+                    #     roi_size=(-1, self.crop_shape, self.crop_shape),
+                    #     random_size=False
+                    # ),
                     # transforms.RandAffined(
                     #     keys=["image", "target"],
                     #     mode=("bilinear", "nearest"),
@@ -241,14 +280,14 @@ class IrcadbDataloader(MedicalDataloader):
                 transforms.ScaleIntensityRanged(
                     keys=["target"], a_min=0.0, a_max=2.0, b_min=0, b_max=2.0, clip=True
                 ),
-                transforms.RandSpatialCropd(
-                    keys=["image", "target"],
-                    roi_size=(-1, self.crop_shape, self.crop_shape),
-                    random_size=False
-                    # spatial_size=(-1, self.crop_shape, self.crop_shape),
-                    # label_key="target",
-                    # pos=1
-                ),
+                # transforms.RandSpatialCropd(
+                #     keys=["image", "target"],
+                #     roi_size=(-1, self.crop_shape, self.crop_shape),
+                #     random_size=False
+                #     # spatial_size=(-1, self.crop_shape, self.crop_shape),
+                #     # label_key="target",
+                #     # pos=1
+                # ),
                 transforms.ToTensord(keys=["image", "target"]),
             ])
 

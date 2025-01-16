@@ -3,7 +3,7 @@ Image reading tools and functions, facilitating loading of medical data
 in different formats.
 """
 import numpy as np
-import dicom
+import pydicom as dicom
 
 
 def read_dicom_image(path: str):

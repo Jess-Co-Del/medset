@@ -10,7 +10,7 @@ default_confs = {
             "ircadb":{
                 "target_shape" : 300,
                 "crop_shape" : 300,
-                "dataset_path": "/dataset/clipped",
+                "dataset_path": "/dataset/ircadb/clipped",  # /clipped
                 "image_name_prefix": "image_",
                 "mask_name_prefix": "segmentation_",
                 "folder_samples": [
@@ -26,7 +26,7 @@ default_confs = {
             "ircadb":{
                 "target_shape" : 300,
                 "crop_shape" : 300,
-                "dataset_path": "/dataset/clipped",
+                "dataset_path": "/dataset/ircadb/clipped",
                 "image_name_prefix": "image_",
                 "mask_name_prefix": "segmentation_",
                 "folder_samples": ['3Dircadb1.4'],

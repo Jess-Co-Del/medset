@@ -17,6 +17,7 @@ class MedicalDataloader(Dataset):
     1. It is able to deal with datasets stored with specific folder structure for images and masks.
     2. Generates single slice or cubic slice dataset generators, via parameters 'cubic_slicer_context_layers'.
     3. Expects images data to be in dicom format (ATM - extendable to other formats).
+        Assumes volume slices are in dim=-1.
     4. New datasets require the customization of the raw medical data loading and saving into .npy format,
     so that method 'read_dataset_pair_from_path' reads and preparares the output Dataset.
     """

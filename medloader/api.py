@@ -89,7 +89,7 @@ class DatasetEngine:
                 transform=False,
                 verbose=False,
                 config=self.config["train"][list(self.config["train"].keys())[0]]
-            ).scans_to_image_files()
+            ).volume_raw_processing()
 
         elif mode == "setup_clipping":  # process patched/clipped dataset
             return self.from_dataset(
@@ -97,7 +97,7 @@ class DatasetEngine:
                 transform=False,
                 verbose=False,
                 config=self.config["train"][list(self.config["train"].keys())[0]]
-            ).dataset_clipping_preparation()
+            ).dataset_clipping()
 
         elif mode == "config":  # Hard config mode for 'processed' dataset train/test load.
             train_dataset_objects = []

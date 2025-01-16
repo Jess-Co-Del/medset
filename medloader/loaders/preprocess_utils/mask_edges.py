@@ -76,13 +76,25 @@ def extract_bboxes(mask):
     return boxes.astype(np.int32)
 
 
-def clip_data(image, mask, PATCH_SIZE):
+def clip_data(volume, segmentation, PATCH_SIZE):
     """
+    Clip images and masks, centering output in the masks object.
+    Assumes slices are in dim=-1.
     """
-    image = np.pad(image, PATCH_SIZE, mode='minimum')
-    mask = np.pad(mask, PATCH_SIZE, mode='minimum')
+    # Center of volume
+    CENTER_PATCHING = slice(
+        PATCH_SIZE,
+        -PATCH_SIZE
+    )
 
-    if mask.sum() > 0:
+    if segmentation.sum() > 0:
+        volume = np.pad(volume, PATCH_SIZE, mode='minimum')
+        segmentation = np.pad(segmentation, PATCH_SIZE, mode='minimum')
+
+        # BBOX calculus
+        z = segmentation.sum(axis=(-3,-2)).argmax()
+        mask = segmentation[:, :, z]
+
         bbox = extract_bboxes(mask[:, :, np.newaxis])
         # new bbox
         x_pad = (PATCH_SIZE - (bbox[0][2]-bbox[0][0]))/2
@@ -95,20 +107,32 @@ def clip_data(image, mask, PATCH_SIZE):
             math.ceil(bbox[0][3] + y_pad)
         )
 
-        clipped_mask = mask[
+        clipped_mask = segmentation[
             clipped_bbox[0]:clipped_bbox[1],
             clipped_bbox[2]:clipped_bbox[3],
+            CENTER_PATCHING
         ]
-        clipped_image = image[
+        clipped_image = volume[
             clipped_bbox[0]:clipped_bbox[1],
             clipped_bbox[2]:clipped_bbox[3],
+            CENTER_PATCHING
         ]
     else:
-        clipped_mask = mask
-        clipped_image = image
+        HALF_PATCH_SIZE = PATCH_SIZE/2
 
-    clipped_mask = clipped_mask[:PATCH_SIZE, :PATCH_SIZE]
-    clipped_image = clipped_image[:PATCH_SIZE, :PATCH_SIZE]
+        clipped_mask = segmentation[
+            segmentation.shape[0]/2-HALF_PATCH_SIZE:segmentation.shape[0]/2+HALF_PATCH_SIZE,
+            segmentation.shape[1]/2-HALF_PATCH_SIZE:segmentation.shape[1]/2+HALF_PATCH_SIZE,
+            segmentation.shape[2]/2-HALF_PATCH_SIZE:segmentation.shape[2]/2+HALF_PATCH_SIZE
+        ]
+        clipped_image = volume[
+            segmentation.shape[0]/2-HALF_PATCH_SIZE:segmentation.shape[0]/2+HALF_PATCH_SIZE,
+            segmentation.shape[1]/2-HALF_PATCH_SIZE:segmentation.shape[1]/2+HALF_PATCH_SIZE,
+            segmentation.shape[2]/2-HALF_PATCH_SIZE:segmentation.shape[2]/2+HALF_PATCH_SIZE
+       ]
+
+    assert clipped_mask.shape[-3:-1] == (PATCH_SIZE, PATCH_SIZE)
+    assert clipped_image.shape[-3:-1] == (PATCH_SIZE, PATCH_SIZE)
     return clipped_image, clipped_mask
 
 

@@ -12,7 +12,6 @@ import torch
 from monai import transforms
 from .medicaldataloader import MedicalDataloader
 from .preprocess_utils.mask_edges import clip_data
-import pydicom as dicom
 import nibabel as nib
 from PIL import Image
 
@@ -27,10 +26,11 @@ class LitsDataloader(MedicalDataloader):
     These are then used normaly by the MedicalDataLoader object.
     """
 
-    def dataset_clipping_preparation(self):
+    def dataset_clipping(self):
         """
         Preprocessing required for usage of the Lits Nifty files to be
-        used by the MedicalDataLoader api. This function clips the images, to [300,300,:] resolution.
+        used by the MedicalDataLoader api. This function clips the images.
+        Expects volume slices in dim=-1.
         """
         PATCH_SIZE = self.target_shape
 
@@ -43,22 +43,21 @@ class LitsDataloader(MedicalDataloader):
             "raw"
         )
 
-        for scan_id in range(0, 131):
+        for scan_id in range(0, 130):
             scan_output = os.path.join(target_path, f"scan_{scan_id}")
             os.makedirs(scan_output, exist_ok=True)
             mask = nib.load(os.path.join(raw_folder, f"segmentation-{scan_id}"+".nii")).get_fdata()
             image = nib.load(os.path.join(raw_folder, f"volume-{scan_id}"+".nii")).get_fdata()
-            logging.info(f"Processing {os.path.join(raw_folder, f'volume-{scan_id}' + '.nii')} with shape {image.shape}")
+            logging.info(f"Processing {os.path.join(raw_folder, f'volume-{scan_id}.nii')} with shape {image.shape}")
 
-            image, mask = clip_data(image, mask)
-
+            image, mask = clip_data(image, mask, PATCH_SIZE)
             for slice_id in range(image.shape[2]):
                 np.save(
-                    os.path.join(scan_output, f"volume-{scan_id}".split('-')[0]+f"_{slice_id}.npy"),
+                    os.path.join(scan_output, f"{self.image_name_prefix}{slice_id}.npy"),
                     image[:,:,slice_id]
                 )
                 np.save(
-                    os.path.join(scan_output, f"segmentation-{scan_id}".split('-')[0]+f"_{slice_id}.npy"),
+                    os.path.join(scan_output, f"{self.mask_name_prefix}{slice_id}.npy"),
                     mask[:,:,slice_id]
                 )
 
@@ -79,7 +78,7 @@ class LitsDataloader(MedicalDataloader):
             "raw"
         )
 
-        for scan_id in range(1,131):
+        for scan_id in range(1,130):
             scan_output = os.path.join(target_path, f"scan_{scan_id}")
             os.makedirs(scan_output, exist_ok=True)
             for f_string_file in [f"segmentation-{scan_id}", f"volume-{scan_id}"]:
@@ -122,7 +121,7 @@ class LitsDataloader(MedicalDataloader):
             "raw"
         )
 
-        for scan_id in range(1,201):
+        for scan_id in range(1,130):
             scan_output = os.path.join(target_path, f"scan_{scan_id}")
             os.makedirs(scan_output, exist_ok=True)
             for f_string_file in [f"volume-{scan_id}", f"segmentation-{scan_id}"]:
@@ -205,35 +204,63 @@ class LitsDataloader(MedicalDataloader):
             data (_type_): _description_
         """
 
-        train_transforms = transforms.Compose(
-            [
-                # transforms.ScaleIntensityRanged(
-                #     keys=["image"], a_min=-175.0, a_max=250.0, b_min=0, b_max=1.0, clip=True
-                # ),
-                # transforms.ScaleIntensityRanged(
-                #     keys=["target"], a_min=0.0, a_max=1.0, b_min=0, b_max=1.0, clip=True
-                # ),
-                # transforms.CropForegroundd(keys=["image", "target"], source_key="image"),
-                #transforms.RandSpatialCropd(keys=["image", "target"], roi_size=(-1, 96, 96), random_size=False),
-                # transforms.RandCropByPosNegLabeld(
+        if self.transform:
+
+            train_transforms = transforms.Compose(
+                [
+                    transforms.ScaleIntensityRanged(
+                        keys=["image"],
+                        a_min=-175, a_max=250.0, b_min=0, b_max=1.0, clip=True
+                    ),
+                    # transforms.ScaleIntensityRanged(
+                    #     keys=["target"], a_min=0.0, a_max=2.0, b_min=0, b_max=2.0, clip=True
+                    # ),
+                    # transforms.RandSpatialCropd(  # CHECK ME LATER RandCropByPosNegLabeld()
+                    #     keys=["image", "target"],
+                    #     # label_key="targe"
+                    #     roi_size=(-1, self.crop_shape, self.crop_shape),
+                    #     random_size=False
+                    # ),
+                    # transforms.RandAffined(
+                    #     keys=["image", "target"],
+                    #     mode=("bilinear", "nearest"),
+                    #     prob=0.8,
+                    #     shear_range=[[0,0],[0,0],[0.5,0.8]],
+                    #     rotate_range=[[0,0],[0,0],[0,0]],
+                    #     #scale_range=(0.15, 0.15, 0.15),
+                    #     padding_mode="zeros"
+                    # ),
+                    # TRANSFORMS.RANDROTATED(
+                    #     KEYS=["IMAGE", "TARGET"],
+                    #     RANGE_X=(-3.14, 3.14),
+                    #     PROB=0.9,
+                    #     PADDING_MODE='ZEROS'
+                    #     #SPATIAL_AXES=(1,2)
+                    # ),
+                    transforms.ToTensord(keys=["image", "target"]),
+                ]
+            )
+            transformed = train_transforms(data)
+
+        else:
+            base_transforms = transforms.Compose([
+                transforms.ScaleIntensityRanged(
+                        keys=["image"], a_min=-175, a_max=250.0, b_min=0, b_max=1.0, clip=True
+                    ),
+                transforms.ScaleIntensityRanged(
+                    keys=["target"], a_min=0.0, a_max=2.0, b_min=0, b_max=2.0, clip=True
+                ),
+                # transforms.RandSpatialCropd(
                 #     keys=["image", "target"],
-                #     label_key="target",
-                #     spatial_size=(-1,-1,120,120),
-                #     pos=0.25,
-                #     neg=0.75,
-                #     num_samples=4,
-                #     image_key="image",
-                #     image_threshold=0,
+                #     roi_size=(-1, self.crop_shape, self.crop_shape),
+                #     random_size=False
+                #     # spatial_size=(-1, self.crop_shape, self.crop_shape),
+                #     # label_key="target",
+                #     # pos=1
                 # ),
-                # transforms.RandFlipd(keys=["image", "target"], prob=0.2, spatial_axis=0),
-                # transforms.RandFlipd(keys=["image", "target"], prob=0.2, spatial_axis=1),
-                # transforms.RandFlipd(keys=["image", "target"], prob=0.2, spatial_axis=2),
-                # transforms.RandRotate90d(keys=["image", "target"], prob=0.2, max_k=3),
+                transforms.ToTensord(keys=["image", "target"]),
+            ])
 
-                # transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=0.1),
-                # transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.1),
-                transforms.ToTensord(keys=["image", "target"],),
-            ]
-        )
+            transformed = base_transforms(data)
 
-        return train_transforms(data)
+        return transformed

@@ -6,10 +6,11 @@ default_confs = {
     "generate_report_folder": True,
     "reporting_target_folder": "/etc/src/result_report",
     "datasets": {
-        "cubic_slicer_context_layers": 0, # when =2, inputs include 5 slices. Two adjacent slices in the z-axis.
+        "cubic_slicer_context_layers": 1, # when =2, inputs include 5 slices. Two adjacent slices in the z-axis.
         "train": {
             "Lits": {
                 "target_shape" : 300,
+                "crop_shape" : 300,
                 "dataset_path": "/dataset/Lits",
                 "image_name_prefix": "volume_",
                 "mask_name_prefix": "segmentation_",
@@ -24,15 +25,15 @@ default_confs = {
         "val": {
             "ircadb": {
                 "target_shape" : 300,
-                "dataset_path": "/dataset",
+                "dataset_path": "/dataset/clipped",
                 "image_name_prefix": "image_",
-                "mask_name_prefix": "image_",
+                "mask_name_prefix": "segmentation_",
                 "folder_samples": ['3Dircadb1.5', '3Dircadb1.15','3Dircadb1.16','3Dircadb1.17',
                         '3Dircadb1.18','3Dircadb1.19', '3Dircadb1.20', '3Dircadb1.9', '3Dircadb1.2',
                         '3Dircadb1.3', '3Dircadb1.4', '3Dircadb1.6', '3Dircadb1.7', '3Dircadb1.8',
                         '3Dircadb1.10','3Dircadb1.11', '3Dircadb1.12', '3Dircadb1.13', '3Dircadb1.14'],
                 "scan_folder": "PATIENT_DICOM",
-                "mask_folder": "MASKS_DICOM/liver",
+                "mask_folder": "MASKS_DICOM",
             }
         },
     },
