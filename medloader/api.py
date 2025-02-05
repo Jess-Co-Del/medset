@@ -4,7 +4,7 @@ Interactive class API with the Dataset generators
 from enum import Enum
 from torch.utils.data import ConcatDataset
 
-from . import IrcadbDataloader, LitsDataloader
+from . import MedicalDataloader, IrcadbDataloader, LitsDataloader
 
 
 class DatasetStore(Enum):
@@ -34,7 +34,7 @@ class DatasetEngine:
         transform: bool,
         verbose: bool,
         config: dict
-    ) -> "AlgorithmEngine":
+    ) -> MedicalDataloader:
         """
         Instantiates a concrete implementation of the Algorithm from its enumeration.
 

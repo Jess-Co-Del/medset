@@ -137,6 +137,31 @@ class MedicalDataloader(Dataset):
 
         return image, label
 
+    def volume_raw_processing(self):
+        """
+        Method to standardize loading the raw medical image data.
+        Make use of the loadinf functions of medical data formats in
+        .preprocess_utils.image_readers. Reads medical data and transforms
+        it into .npy files in configured subfolders.
+        An example convention would be to store these files in a "processed"
+        subfolder.
+        Should allocate volume slices in dim=-1.
+        """
+
+        raise NotImplementedError
+    
+    def dataset_clipping(self):
+        """
+        Method to standardize loading .npy processed medical image data
+        and process it into clipped more memory efficient versions of
+        the original images.
+        An example convention would be to store these files in a "clipped"
+        subfolder.
+        Expects volume slices in dim=-1.
+        """
+
+        raise NotImplementedError
+
     def image_data_stats(self, data_type: str):
         """
         Method to gather image sample data paths into a dictionary variable
@@ -149,6 +174,7 @@ class MedicalDataloader(Dataset):
             data: dict
     ):
         """
-        Method to gather create processing transforms to apply.
+        Method to create pre-processing transforms to apply to images before
+        training.
         """
         raise NotImplementedError

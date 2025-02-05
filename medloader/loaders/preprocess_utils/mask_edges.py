@@ -10,13 +10,18 @@ from skimage.morphology import remove_small_objects
 
 def blob_cleaner(
     binary_mask: torch.Tensor,
-    min_size: int = 64
+    min_size: int = 64,
+    connectivity: int = 1
 ):
     if isinstance(binary_mask, torch.Tensor):
-        binary_mask = binary_mask.cpu().numpy()
+        binary_mask = binary_mask.int().cpu().numpy()
 
     # 1 - Clean by object detection
-    binary_mask = remove_small_objects(binary_mask, min_size=min_size)
+    binary_mask = remove_small_objects(
+        binary_mask.astype(bool),
+        min_size=min_size,
+        connectivity=connectivity
+    )
     binary_mask = (binary_mask*1).astype('uint8')
 
     # 2 - Clean by Erosion ncv2.erode() method
