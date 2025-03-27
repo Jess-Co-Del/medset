@@ -2,18 +2,15 @@
 Medical dataloader compatible with Lits dataset.
 """
 
-from typing import Optional
 import os
 import logging
 import numpy as np
-import random, math
+import math
 
-import torch
 from monai import transforms
 from .medicaldataloader import MedicalDataloader
 from .preprocess_utils.mask_edges import clip_data
 import nibabel as nib
-from PIL import Image
 
 
 class LitsDataloader(MedicalDataloader):
@@ -35,7 +32,7 @@ class LitsDataloader(MedicalDataloader):
         PATCH_SIZE = self.target_shape
 
         logging.basicConfig(level=logging.INFO, filename="/dataset/Lits/patching_log.log", filemode="w")
-        target_path= os.path.join(self.dataset_path, "clipped")
+        target_path= os.path.join(self.dataset_path, f"clipped_{self.target_shape}_")
         os.makedirs(target_path, exist_ok=True)
 
         raw_folder = os.path.join(
@@ -51,7 +48,8 @@ class LitsDataloader(MedicalDataloader):
             logging.info(f"Processing {os.path.join(raw_folder, f'volume-{scan_id}.nii')} with shape {image.shape}")
 
             image, mask = clip_data(image, mask, PATCH_SIZE)
-            for slice_id in range(image.shape[2]):
+            logging.info(f"Saving {os.path.join(raw_folder, f'volume-{scan_id}.nii')} with shape {image.shape}")
+            for slice_id in range(image.shape[-1]):
                 np.save(
                     os.path.join(scan_output, f"{self.image_name_prefix}{slice_id}.npy"),
                     image[:,:,slice_id]

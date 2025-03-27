@@ -9,8 +9,8 @@ default_confs = {
         "cubic_slicer_context_layers": 1, # when =2, inputs include 5 slices. Two adjacent slices in the z-axis.
         "train": {
             "Lits": {
-                "target_shape" : 300,
-                "crop_shape" : 300,
+                "target_shape" : 512,
+                "crop_shape" : 512,
                 "dataset_path": "/dataset/Lits",
                 "image_name_prefix": "volume_",
                 "mask_name_prefix": "segmentation_",
@@ -24,8 +24,9 @@ default_confs = {
         # Val configuration
         "val": {
             "ircadb": {
-                "target_shape" : 300,
-                "dataset_path": "/dataset/clipped",
+                "target_shape" : 512,
+                "crop_shape" : 512,
+                "dataset_path": "/dataset/ircadb",
                 "image_name_prefix": "image_",
                 "mask_name_prefix": "segmentation_",
                 "folder_samples": ['3Dircadb1.5', '3Dircadb1.15','3Dircadb1.16','3Dircadb1.17',

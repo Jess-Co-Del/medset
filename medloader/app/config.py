@@ -8,14 +8,14 @@ default_confs = {
         "cubic_slicer_context_layers": 1, # when =2, inputs include 5 slices. Two adjacent slices in the z-axis.
         "train": {
             "ircadb":{
-                "target_shape" : 300,
-                "crop_shape" : 300,
-                "dataset_path": "/dataset/ircadb/clipped",  # /clipped
+                "target_shape" : 512,
+                "crop_shape" : 512,
+                "dataset_path": "/dataset/ircadb",  # /clipped
                 "image_name_prefix": "image_",
                 "mask_name_prefix": "segmentation_",
                 "folder_samples": [
                     '3Dircadb1.13', '3Dircadb1.14', '3Dircadb1.15','3Dircadb1.16','3Dircadb1.17', '3Dircadb1.18', '3Dircadb1.19', '3Dircadb1.20', '3Dircadb1.12',
-                    '3Dircadb1.6', '3Dircadb1.7', '3Dircadb1.8','3Dircadb1.9', '3Dircadb1.10','3Dircadb1.11', '3Dircadb1.2', '3Dircadb1.3','3Dircadb1.5',
+                    '3Dircadb1.6', '3Dircadb1.7', '3Dircadb1.8','3Dircadb1.9', '3Dircadb1.10','3Dircadb1.11', '3Dircadb1.2', '3Dircadb1.3','3Dircadb1.5','3Dircadb1.4'
                 ],
                 "scan_folder": "PATIENT_DICOM",
                 "mask_folder": "MASKS_DICOM"
@@ -24,9 +24,9 @@ default_confs = {
         # Val configuration
         "val": {
             "ircadb":{
-                "target_shape" : 300,
-                "crop_shape" : 300,
-                "dataset_path": "/dataset/ircadb/clipped",
+                "target_shape" : 512,
+                "crop_shape" : 512,
+                "dataset_path": "/dataset/ircadb",
                 "image_name_prefix": "image_",
                 "mask_name_prefix": "segmentation_",
                 "folder_samples": ['3Dircadb1.4'],

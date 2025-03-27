@@ -24,7 +24,9 @@ class IrcadbDataloader(MedicalDataloader):
     def volume_raw_processing(self):
         """
         Read raw scan slices, into a volume. 3Dircadb comes in individual
-        slices, in .nii format. Output is written to /dataset/processed/scan_id.npy
+        slices, in .nii format. Input .nii files are expected in a /raw folder
+        inside the self.dataset_path folder.
+        Output is written to /dataset/processed/scan_id.npy
         format.
         Alocates volume slices in dim=-1.
         """
@@ -46,6 +48,7 @@ class IrcadbDataloader(MedicalDataloader):
                 mask_placeholder[:, :, slice_id] = mask
 
             scan_output = os.path.join(target_path, f"{scan_id}")
+
             logging.debug(f"Processing {scan_output} with shape {image_placeholder.shape}")
             os.makedirs(scan_output, exist_ok=True)
             np.save(
@@ -64,13 +67,12 @@ class IrcadbDataloader(MedicalDataloader):
         to [300,300,:] resolution.
         Expects volume slices in dim=-1.
         """
-        PATCH_SIZE = self.target_shape
 
         logging.basicConfig(
             level=logging.INFO,
             filename="/dataset/ircadb/patching_log.log", filemode="w"
         )
-        target_path = os.path.join(self.dataset_path, "clipped")
+        target_path = os.path.join(self.dataset_path, f"clipped_{self.target_shape}_")
         os.makedirs(target_path, exist_ok=True)
 
         for scan_id in self.folder_samples:
@@ -82,8 +84,9 @@ class IrcadbDataloader(MedicalDataloader):
 
             volume = np.load(os.path.join(scan_folder, "volume.npy"))
             segmentation = np.load(os.path.join(scan_folder, "segmentation.npy"))
-            logging.debug(f"Processing sliced, volume {volume.shape}.")
-            volume, segmentation = clip_data(volume, segmentation, PATCH_SIZE)
+            logging.debug(f"Processing sliced volume {volume.shape}.")
+            volume, segmentation = clip_data(volume, segmentation, self.target_shape)
+            logging.debug(f"Saving sliced volume {volume.shape}.")
 
             # Save in slices
             scan_output = os.path.join(target_path, f"{scan_id}")
@@ -138,10 +141,16 @@ class IrcadbDataloader(MedicalDataloader):
         raw_process: bool = True
         ):
         """
-        
+        Raw processing of dataset controlled by raw_process flag.
+        In raw processing, app expects data a /raw folder, and frabs
+        masks from several folders of the dataset.
         """
+        if raw_process: subfolder = 'raw'
+        else: subfolder = 'processed'
+        
         patient_folder = os.path.join(
                         self.dataset_path,
+                        subfolder,
                         sample_id,
             )
 
@@ -178,7 +187,11 @@ class IrcadbDataloader(MedicalDataloader):
 
         for sample_id in self.folder_samples:
 
-            scan_folder = self.read_dicom_pair_paths(sample_id, raw_process=False)
+            scan_folder = os.path.join(
+                self.dataset_path,
+                f"clipped_{self.target_shape}_",
+                sample_id
+            )
 
             patient_slices = int(len(os.listdir(scan_folder))/2)
             slices_list_values[scan_folder] = patient_slices  # Log slice count

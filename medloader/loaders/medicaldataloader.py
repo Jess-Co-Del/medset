@@ -60,9 +60,9 @@ class MedicalDataloader(Dataset):
         self.inputs_shape = (self.cubic_slicer_context_layers*2 +1, self.target_shape, self.target_shape)  # C x H x W expected dimension
         self.crop_shape =  target_shape if crop_shape is None else crop_shape
 
-        # Generate image data paths
         self._validate_runner_device()
 
+        # Generate image data paths
         if self.verbose:  # Flag run to generate the final torch Dataset object with information.
             self.image_data_stats()
 

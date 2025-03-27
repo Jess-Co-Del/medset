@@ -98,9 +98,9 @@ def clip_data(volume, segmentation, PATCH_SIZE):
 
         # BBOX calculus
         z = segmentation.sum(axis=(-3,-2)).argmax()
-        mask = segmentation[:, :, z]
+        mask = segmentation[:, :, [z]]
 
-        bbox = extract_bboxes(mask[:, :, np.newaxis])
+        bbox = extract_bboxes(mask)
         # new bbox
         x_pad = (PATCH_SIZE - (bbox[0][2]-bbox[0][0]))/2
         y_pad = (PATCH_SIZE - (bbox[0][3]-bbox[0][1]))/2
